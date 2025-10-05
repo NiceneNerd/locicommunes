@@ -122,7 +122,7 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     const imageData = offCtx.getImageData(0, 0, storyWidth, storyHeight);
     StackBlur.imageDataRGBA(imageData, 0, 0, storyWidth, storyHeight, blurRadius);
     ctx.putImageData(imageData, 0, 0);    // Add a semi-transparent overlay for better contrast
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.33)';
     ctx.fillRect(0, 0, storyWidth, storyHeight);
 
     // Extract dominant colors
@@ -137,10 +137,10 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     if (vibrantSwatch) {
       paletteLuminance = getLuminance(...vibrantSwatch.rgb);
     }
-    // Set text background color: almost black or almost white
-    const bgColor = paletteLuminance > 0.5
-      ? 'rgba(255,255,255,0.65)' // almost white, more transparent
-      : 'rgba(0,0,0,0.65)'; // almost black, more transparent
+    // We'll compute the final `bgColor` later once we know the exact text background
+    // rectangle (bgX, bgY, bgWidth, bgHeight). That lets us sample the precise
+    // blurred pixels and pick an appropriate alpha so the background remains
+    // visibly translucent on bright images.
 
     // Step 2: Draw the cover image at bottom right
   const coverHeight = storyHeight * 0.25;
@@ -202,6 +202,41 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     const bgY = Math.round(textBlockTop - paddingY);
 
     const radius = 15;
+
+    // Compute adaptive background alpha by sampling the exact blurred region under
+    // the text background. Brighter sampled areas will yield a lower alpha so the
+    // background doesn't appear fully solid.
+    let bgAlpha = 0.65; // default fallback
+    try {
+      // Clamp sample rect to canvas bounds
+      const sampleX = Math.max(0, Math.min(storyWidth - 1, bgX));
+      const sampleY = Math.max(0, Math.min(storyHeight - 1, bgY));
+      const sampleW = Math.max(1, Math.min(bgWidth, storyWidth - sampleX));
+      const sampleH = Math.max(1, Math.min(bgHeight, storyHeight - sampleY));
+
+      const sampleData = offCtx.getImageData(sampleX, sampleY, sampleW, sampleH).data;
+      let totalLum = 0;
+      const pxCount = sampleW * sampleH;
+      // iterate pixels
+      for (let i = 0; i < sampleData.length; i += 4) {
+        const r = sampleData[i];
+        const g = sampleData[i + 1];
+        const b = sampleData[i + 2];
+        totalLum += getLuminance(r, g, b);
+      }
+      const avgLum = totalLum / pxCount; // 0..1
+
+      // Map avgLum (0..1) to alpha range (dark -> stronger bg). We'll use 0.78..0.28.
+      bgAlpha = 0.78 - (avgLum * (0.78 - 0.28));
+      bgAlpha = Math.max(0.28, Math.min(0.78, bgAlpha));
+    } catch (e) {
+      console.warn('Adaptive bg alpha sampling failed, using fallback alpha', e && e.message);
+      bgAlpha = 0.65;
+    }
+
+    const bgColor = paletteLuminance > 0.5
+      ? `rgba(255,255,255,${bgAlpha})`
+      : `rgba(0,0,0,${bgAlpha})`;
 
     // Create an offscreen canvas for extra blur, sample from the blurred offscreen (before overlay)
     const textBgCanvas = createCanvas(bgWidth, bgHeight);
