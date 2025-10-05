@@ -83,6 +83,9 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     const canvas = createCanvas(storyWidth, storyHeight);
     const ctx = canvas.getContext('2d');
 
+  // layout margins / padding (increased for more breathing room)
+  const margin = 80; // edge margin (used to position mini cover and text area)
+
 
     // Step 1: Draw blurred background
     // Calculate crop dimensions to maintain aspect ratio
@@ -140,10 +143,10 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
       : 'rgba(0,0,0,0.65)'; // almost black, more transparent
 
     // Step 2: Draw the cover image at bottom right
-    const coverHeight = storyHeight * 0.25;
-    const coverWidth = (coverImage.width / coverImage.height) * coverHeight;
-    const coverX = storyWidth - coverWidth - 60;
-    const coverY = storyHeight - coverHeight - 60;
+  const coverHeight = storyHeight * 0.25;
+  const coverWidth = (coverImage.width / coverImage.height) * coverHeight;
+  const coverX = storyWidth - coverWidth - margin;
+  const coverY = storyHeight - coverHeight - margin;
 
     // Draw shadow
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
@@ -157,20 +160,27 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     ctx.shadowOffsetY = 0;
 
     // Step 3: Draw quote text
-    const textAreaTop = 100;
-    const textAreaBottom = coverY - 60;
-    const textAreaHeight = textAreaBottom - textAreaTop;
-    const textAreaWidth = storyWidth - 120;
-    const textAreaX = 60;
+  const textAreaTop = 100;
+  const textAreaBottom = coverY - margin;
+  const textAreaHeight = textAreaBottom - textAreaTop;
+  const textAreaWidth = storyWidth - (margin * 2);
+  const textAreaX = margin;
 
-    // Find optimal font size
+    // Padding for the text background
+    const paddingX = 60; // increased horizontal padding
+    const paddingY = 40; // increased vertical padding
+
+    // We'll measure text constrained to the inner width (accounting for horizontal padding)
+    const wrapWidth = Math.max(10, textAreaWidth - paddingX * 2);
+
+    // Find optimal font size while wrapping to wrapWidth
     let fontSize = 80;
     let lines = [];
     let totalTextHeight = 0;
 
     do {
       fontSize -= 2;
-      lines = measureText(ctx, quote, fontSize, textAreaWidth);
+      lines = measureText(ctx, quote, fontSize, wrapWidth);
       const lineHeight = fontSize * 1.4;
       totalTextHeight = lines.length * lineHeight;
     } while (totalTextHeight > textAreaHeight && fontSize > 20);
@@ -178,21 +188,17 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     const lineHeight = fontSize * 1.4;
     totalTextHeight = lines.length * lineHeight;
 
-    // Calculate max line width
+    // Calculate max line width from measured lines
     ctx.font = `${fontSize}px 'Georgia', serif`;
-    const maxLineWidth = lines.reduce((max, line) => {
-      return Math.max(max, ctx.measureText(line).width);
-    }, 0);
+    const maxLineWidth = lines.reduce((max, line) => Math.max(max, ctx.measureText(line).width), 0);
 
-    // Calculate text block position
+    // Calculate text block position (centered within the text area, not entire canvas)
     const textBlockTop = textAreaTop + (textAreaHeight - totalTextHeight) / 2;
-    const textCenterX = storyWidth / 2;
-    const paddingX = 40;
-    const paddingY = 30;
+    const textAreaCenterX = textAreaX + textAreaWidth / 2;
 
     const bgWidth = Math.max(1, Math.round(maxLineWidth + paddingX * 2));
     const bgHeight = Math.max(1, Math.round(totalTextHeight + paddingY * 2));
-    const bgX = Math.round(textCenterX - bgWidth / 2);
+    const bgX = Math.round(textAreaCenterX - bgWidth / 2);
     const bgY = Math.round(textBlockTop - paddingY);
 
     const radius = 15;
@@ -251,7 +257,7 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
 
     lines.forEach((line, i) => {
       const y = textBlockTop + i * lineHeight;
-      ctx.fillText(line, textCenterX, y);
+      ctx.fillText(line, textAreaCenterX, y);
     });
 
     // Convert canvas to buffer and send
