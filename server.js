@@ -157,12 +157,48 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     // blurred pixels and pick an appropriate alpha so the background remains
     // visibly translucent on bright images.
 
-    // Step 2: Draw the cover image at bottom right
-  const coverHeight = storyHeight * 0.25;
-  const coverWidth = (coverImage.width / coverImage.height) * coverHeight;
-  const coverX = storyWidth - coverWidth - margin;
-  const coverY = storyHeight - coverHeight - margin;
+    let coverX, coverY, coverWidth, coverHeight;
+    let textAreaX, textAreaWidth, textAreaHeight, textAreaTop, textAreaBottom;
 
+    if (aspectRatio === '2:1') {
+      // Right side for cover
+      const coverAreaWidth = storyWidth * 0.35;
+      const coverAreaX = storyWidth - coverAreaWidth;
+
+      coverWidth = coverAreaWidth - (margin * 2);
+      coverHeight = (coverImage.height / coverImage.width) * coverWidth;
+
+      if (coverHeight > storyHeight - (margin * 2)) {
+        coverHeight = storyHeight - (margin * 2);
+        coverWidth = (coverImage.width / coverImage.height) * coverHeight;
+      }
+
+      coverX = coverAreaX + (coverAreaWidth - coverWidth) / 2;
+      coverY = (storyHeight - coverHeight) / 2;
+
+      // Left side for text
+      textAreaX = margin;
+      textAreaWidth = storyWidth - coverAreaWidth - margin;
+      textAreaTop = margin;
+      textAreaBottom = storyHeight - margin;
+      textAreaHeight = textAreaBottom - textAreaTop;
+
+    } else {
+      // Bottom right for cover (default behavior)
+      coverHeight = storyHeight * 0.25;
+      coverWidth = (coverImage.width / coverImage.height) * coverHeight;
+      coverX = storyWidth - coverWidth - margin;
+      coverY = storyHeight - coverHeight - margin;
+
+      textAreaTop = 100;
+      textAreaBottom = coverY - margin;
+      textAreaHeight = textAreaBottom - textAreaTop;
+      textAreaWidth = storyWidth - (margin * 2);
+      textAreaX = margin;
+    }
+
+
+    // Step 2: Draw the cover image
     // Draw shadow
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     ctx.shadowBlur = 20;
@@ -175,12 +211,6 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     ctx.shadowOffsetY = 0;
 
     // Step 3: Draw quote text
-  const textAreaTop = 100;
-  const textAreaBottom = coverY - margin;
-  const textAreaHeight = textAreaBottom - textAreaTop;
-  const textAreaWidth = storyWidth - (margin * 2);
-  const textAreaX = margin;
-
     // Padding for the text background
     const paddingX = 60; // increased horizontal padding
     const paddingY = 40; // increased vertical padding
