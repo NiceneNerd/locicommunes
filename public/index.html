@@ -1,374 +1,384 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quote Image Generator</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quotations — Image Generator</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      /* Base reset */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
+      /* Classical, minimal typography and palette (sans-serif for UI readability) */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
+          Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;
+        background: #f6f1e6; /* parchment tone */
+        color: #2f2a24;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
 
+      .container {
+        background: #fcfbf7; /* soft off-white */
+        border: 1px solid rgba(47, 42, 36, 0.06);
+        border-radius: 12px;
+        max-width: 560px;
+        width: 100%;
+        padding: 2rem;
+        box-shadow: 0 6px 18px rgba(47, 42, 36, 0.06);
+      }
+
+      h1 {
+        font-size: 1.6rem;
+        color: #2b251f;
+        margin-bottom: 0.25rem;
+        text-align: center;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+      }
+
+      .subtitle {
+        color: #635a51;
+        font-size: 0.95rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        line-height: 1.4;
+      }
+
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+
+      label {
+        display: block;
+        color: #5b5248;
+        font-weight: 500;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+      }
+
+      textarea {
+        width: 100%;
+        padding: 0.9rem;
+        border: 1px solid rgba(47, 42, 36, 0.08);
+        border-radius: 8px;
+        font-size: 1rem;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 140px;
+        color: #2b251f;
+        line-height: 1.45;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: rgba(47, 42, 36, 0.18);
+        box-shadow: 0 0 0 3px rgba(99, 90, 81, 0.04);
+      }
+
+      .file-input-wrapper {
+        width: 100%;
+      }
+
+      .file-input-wrapper input[type="file"] {
+        position: absolute;
+        left: -9999px;
+      }
+
+      .file-input-label {
+        display: block;
+        padding: 0.8rem;
+        background: transparent;
+        border: 1px solid rgba(47, 42, 36, 0.08);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+        color: #4f463d;
+        text-align: center;
+        font-weight: 500;
+      }
+
+      .file-input-label:hover {
+        border-color: rgba(47, 42, 36, 0.16);
+      }
+
+      .file-input-label.has-file {
+        background: rgba(99, 90, 81, 0.02);
+      }
+
+      .file-name {
+        margin-top: 0.4rem;
+        font-size: 0.9rem;
+        color: #6b6258;
+        text-align: center;
+        word-break: break-word;
+      }
+
+      button[type="submit"] {
+        width: 100%;
+        padding: 0.9rem;
+        background: transparent;
+        color: #2b251f;
+        border: 1px solid rgba(47, 42, 36, 0.12);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        transition: background 0.12s, transform 0.08s;
+        letter-spacing: 0.6px;
+      }
+
+      button[type="submit"]:hover {
+        background: rgba(47, 42, 36, 0.03);
+        transform: translateY(-1px);
+      }
+      button[type="submit"]:active {
+        transform: translateY(0);
+      }
+      button[type="submit"]:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        color: #6b6258;
+        margin-top: 0.9rem;
+        font-size: 0.9rem;
+      }
+
+      /* subtle circular spinner */
+      .spinner {
+        display: inline-block;
+        width: 0.9rem;
+        height: 0.9rem;
+        border: 2px solid rgba(47, 42, 36, 0.12);
+        border-top-color: rgba(47, 42, 36, 0.32);
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+        margin-right: 0.5rem;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error {
+        background: #fff8f6;
+        border: 1px solid rgba(195, 80, 72, 0.12);
+        color: #7b2f2c;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        display: none;
+      }
+
+      .error.show {
+        display: block;
+      }
+
+      @media (max-width: 640px) {
         .container {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
-            width: 100%;
-            padding: 2rem;
+          padding: 1.25rem;
         }
-
         h1 {
-            font-size: 1.75rem;
-            color: #2d3748;
-            margin-bottom: 0.5rem;
-            text-align: center;
+          font-size: 1.25rem;
         }
-
-        .subtitle {
-            color: #718096;
-            font-size: 0.875rem;
-            text-align: center;
-            margin-bottom: 2rem;
-            line-height: 1.5;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            color: #4a5568;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-        }
-
         textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 0.5rem;
-            font-size: 1rem;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 120px;
-            transition: border-color 0.2s;
+          min-height: 120px;
         }
+      }
 
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+      .footer {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(47, 42, 36, 0.04);
+        text-align: center;
+        color: #6b6258;
+        font-size: 0.8rem;
+      }
 
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input-wrapper input[type=file] {
-            position: absolute;
-            left: -9999px;
-        }
-
-        .file-input-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            background: #f7fafc;
-            border: 2px dashed #cbd5e0;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #4a5568;
-            font-weight: 500;
-        }
-
-        .file-input-label:hover {
-            background: #edf2f7;
-            border-color: #667eea;
-        }
-
-        .file-input-label.has-file {
-            background: #e6fffa;
-            border-color: #38b2ac;
-            border-style: solid;
-        }
-
-        .file-name {
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-            color: #718096;
-            text-align: center;
-        }
-
-        button[type="submit"] {
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 0.5rem;
-        }
-
-        button[type="submit"]:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        button[type="submit"]:active {
-            transform: translateY(0);
-        }
-
-        button[type="submit"]:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            color: #718096;
-            margin-top: 1rem;
-            font-size: 0.875rem;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            border: 2px solid #e2e8f0;
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 0.5rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #fff5f5;
-            border: 1px solid #fc8181;
-            color: #c53030;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-top: 1rem;
-            font-size: 0.875rem;
-            display: none;
-        }
-
-        .error.show {
-            display: block;
-        }
-
-        @media (max-width: 640px) {
-            .container {
-                padding: 1.5rem;
-            }
-
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            textarea {
-                min-height: 100px;
-            }
-        }
-
-        .footer {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e2e8f0;
-            text-align: center;
-            color: #a0aec0;
-            font-size: 0.75rem;
-        }
-
-        .footer p {
-            margin: 0.25rem 0;
-        }
+      .footer p {
+        margin: 0.2rem 0;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>📖 Quote Image Generator</h1>
-        <p class="subtitle">Create beautiful quote images for social media</p>
+      <h1>Quotations — Image Generator</h1>
+      <p class="subtitle">Generate elegantly styled quote images</p>
 
-        <form id="quoteForm">
-            <div class="form-group">
-                <label for="quote">Your Quote</label>
-                <textarea 
-                    id="quote" 
-                    name="quote" 
-                    placeholder="Enter your favorite quote..."
-                    required
-                ></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="cover">Book Cover Image</label>
-                <div class="file-input-wrapper">
-                    <input 
-                        type="file" 
-                        id="cover" 
-                        name="cover" 
-                        accept="image/*"
-                        required
-                        onchange="updateFileName(this)"
-                    >
-                    <label for="cover" class="file-input-label" id="fileLabel">
-                        📤 Choose an image
-                    </label>
-                </div>
-                <div class="file-name" id="fileName"></div>
-            </div>
-
-            <button type="submit">Generate Quote Image</button>
-
-            <div class="loading" id="loading">
-                <span class="spinner"></span>
-                Creating your quote image...
-            </div>
-        </form>
-
-        <div class="error" id="error"></div>
-
-        <div class="footer">
-            <p>📱 Image optimized for Instagram & Facebook Stories (9:16)</p>
-            <p>The generated image will open in a new tab</p>
+      <form id="quoteForm">
+        <div class="form-group">
+          <label for="quote">Your Quote</label>
+          <textarea
+            id="quote"
+            name="quote"
+            placeholder="Enter your favorite quote..."
+            required
+          ></textarea>
         </div>
+
+        <div class="form-group">
+          <label for="cover">Cover image</label>
+          <div class="file-input-wrapper">
+            <input
+              type="file"
+              id="cover"
+              name="cover"
+              accept="image/*"
+              required
+              onchange="updateFileName(this)"
+            />
+            <label for="cover" class="file-input-label" id="fileLabel">
+              Choose an image
+            </label>
+          </div>
+          <div class="file-name" id="fileName"></div>
+        </div>
+
+        <button type="submit">Generate</button>
+
+        <div class="loading" id="loading">
+          <span class="spinner"></span>
+          Generating image…
+        </div>
+      </form>
+
+      <div class="error" id="error"></div>
+
+      <div class="footer">
+        <p>Aspect ratio: 9:16 (portrait)</p>
+        <p>The generated image will open in a new tab</p>
+      </div>
     </div>
 
     <script>
-        function updateFileName(input) {
-            const fileName = input.files[0]?.name;
-            const fileLabel = document.getElementById('fileLabel');
-            const fileNameDisplay = document.getElementById('fileName');
-            
-            if (fileName) {
-                fileLabel.textContent = '✓ Image selected';
-                fileLabel.classList.add('has-file');
-                fileNameDisplay.textContent = fileName;
-            } else {
-                fileLabel.textContent = '📤 Choose an image';
-                fileLabel.classList.remove('has-file');
-                fileNameDisplay.textContent = '';
+      function updateFileName(input) {
+        const fileName = input.files[0]?.name;
+        const fileLabel = document.getElementById("fileLabel");
+        const fileNameDisplay = document.getElementById("fileName");
+
+        if (fileName) {
+          fileLabel.textContent = "Image selected";
+          fileLabel.classList.add("has-file");
+          fileNameDisplay.textContent = fileName;
+        } else {
+          fileLabel.textContent = "Choose an image";
+          fileLabel.classList.remove("has-file");
+          fileNameDisplay.textContent = "";
+        }
+      }
+
+      function showError(message) {
+        const errorDiv = document.getElementById("error");
+        errorDiv.textContent = message;
+        errorDiv.classList.add("show");
+      }
+
+      function hideError() {
+        const errorDiv = document.getElementById("error");
+        errorDiv.classList.remove("show");
+      }
+
+      function showLoading() {
+        document.getElementById("loading").style.display = "block";
+      }
+
+      function hideLoading() {
+        document.getElementById("loading").style.display = "none";
+      }
+
+      // Handle form submission
+      document
+        .getElementById("quoteForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const quote = document.getElementById("quote").value;
+          const coverInput = document.getElementById("cover");
+          const coverFile = coverInput.files[0];
+
+          // Validate inputs
+          if (!quote || !quote.trim()) {
+            showError("Please enter a quote.");
+            return;
+          }
+
+          if (!coverFile) {
+            showError("Please select a cover image.");
+            return;
+          }
+
+          hideError();
+          showLoading();
+
+          try {
+            // Create form data
+            const formData = new FormData();
+            formData.append("quote", quote);
+            formData.append("cover", coverFile);
+
+            // Send request
+            const response = await fetch("/generate", {
+              method: "POST",
+              body: formData,
+            });
+
+            hideLoading();
+
+            if (!response.ok) {
+              const error = await response
+                .json()
+                .catch(() => ({ error: "Failed to generate image" }));
+              showError(
+                error.error || "Failed to generate image. Please try again."
+              );
+              return;
             }
-        }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('show');
-        }
+            // Get the image blob
+            const blob = await response.blob();
 
-        function hideError() {
-            const errorDiv = document.getElementById('error');
-            errorDiv.classList.remove('show');
-        }
+            // Create a URL for the blob
+            const url = URL.createObjectURL(blob);
 
-        function showLoading() {
-            document.getElementById('loading').style.display = 'block';
-        }
+            // Open in new tab
+            const newTab = window.open(url, "_blank");
 
-        function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        // Handle form submission
-        document.getElementById('quoteForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            
-            const quote = document.getElementById('quote').value;
-            const coverInput = document.getElementById('cover');
-            const coverFile = coverInput.files[0];
-
-            // Validate inputs
-            if (!quote || !quote.trim()) {
-                showError('Please enter a quote.');
-                return;
+            if (!newTab) {
+              showError(
+                "Pop-up blocked. Please allow pop-ups for this site and try again."
+              );
+              URL.revokeObjectURL(url);
+              return;
             }
 
-            if (!coverFile) {
-                showError('Please select a cover image.');
-                return;
-            }
-
-            hideError();
-            showLoading();
-
-            try {
-                // Create form data
-                const formData = new FormData();
-                formData.append('quote', quote);
-                formData.append('cover', coverFile);
-
-                // Send request
-                const response = await fetch('/generate', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                hideLoading();
-
-                if (!response.ok) {
-                    const error = await response.json().catch(() => ({ error: 'Failed to generate image' }));
-                    showError(error.error || 'Failed to generate image. Please try again.');
-                    return;
-                }
-
-                // Get the image blob
-                const blob = await response.blob();
-                
-                // Create a URL for the blob
-                const url = URL.createObjectURL(blob);
-                
-                // Open in new tab
-                const newTab = window.open(url, '_blank');
-                
-                if (!newTab) {
-                    showError('Pop-up blocked. Please allow pop-ups for this site and try again.');
-                    URL.revokeObjectURL(url);
-                    return;
-                }
-
-                // Optional: Reset form after successful generation
-                setTimeout(() => {
-                    document.getElementById('quoteForm').reset();
-                    updateFileName(coverInput);
-                }, 500);
-
-            } catch (error) {
-                hideLoading();
-                console.error('Error:', error);
-                showError('An error occurred. Please try again.');
-            }
+            // Optional: Reset form after successful generation
+            setTimeout(() => {
+              document.getElementById("quoteForm").reset();
+              updateFileName(coverInput);
+            }, 500);
+          } catch (error) {
+            hideLoading();
+            console.error("Error:", error);
+            showError("An error occurred. Please try again.");
+          }
         });
     </script>
-</body>
+  </body>
 </html>
