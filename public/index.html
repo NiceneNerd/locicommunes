@@ -251,6 +251,24 @@
           <div class="file-name" id="fileName"></div>
         </div>
 
+        <div class="form-group">
+          <label>Aspect Ratio</label>
+          <div class="ratio-options">
+            <label>
+              <input type="radio" name="aspectRatio" value="9:16" checked onchange="updateAspectRatioInfo(this)">
+              9:16 (Story)
+            </label>
+            <label>
+              <input type="radio" name="aspectRatio" value="2:1" onchange="updateAspectRatioInfo(this)">
+              2:1 (Landscape)
+            </label>
+            <label>
+              <input type="radio" name="aspectRatio" value="1:1" onchange="updateAspectRatioInfo(this)">
+              1:1 (Square)
+            </label>
+          </div>
+        </div>
+
         <button type="submit">Generate</button>
 
         <div class="loading" id="loading">
@@ -262,7 +280,7 @@
       <div class="error" id="error"></div>
 
       <div class="footer">
-        <p>Aspect ratio: 9:16 (portrait)</p>
+        <p>Aspect ratio: <span id="aspect-ratio-info">9:16 (portrait)</span></p>
         <p>The generated image will open in a new tab</p>
       </div>
     </div>
@@ -303,6 +321,13 @@
         document.getElementById("loading").style.display = "none";
       }
 
+      function updateAspectRatioInfo(radio) {
+        const info = document.getElementById('aspect-ratio-info');
+        if (radio.value === '9:16') info.textContent = '9:16 (portrait)';
+        if (radio.value === '2:1') info.textContent = '2:1 (landscape)';
+        if (radio.value === '1:1') info.textContent = '1:1 (square)';
+      }
+
       // Handle form submission
       document
         .getElementById("quoteForm")
@@ -312,6 +337,8 @@
           const quote = document.getElementById("quote").value;
           const coverInput = document.getElementById("cover");
           const coverFile = coverInput.files[0];
+          const aspectRatio = document.querySelector('input[name="aspectRatio"]:checked').value;
+
 
           // Validate inputs
           if (!quote || !quote.trim()) {
@@ -332,6 +359,7 @@
             const formData = new FormData();
             formData.append("quote", quote);
             formData.append("cover", coverFile);
+            formData.append('aspectRatio', aspectRatio);
 
             // Send request
             const response = await fetch("/generate", {

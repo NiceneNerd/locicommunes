@@ -60,6 +60,7 @@ function measureText(ctx, text, fontSize, maxWidth) {
 app.post('/generate', upload.single('cover'), async (req, res) => {
   try {
     const quote = req.body.quote;
+    const aspectRatio = req.body.aspectRatio || '9:16'; // Default to 9:16
 
     // Validate inputs
     if (!quote || !quote.trim()) {
@@ -75,9 +76,23 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     // Load the cover image
     const coverImage = await loadImage(coverBuffer);
 
-    // Story dimensions (9:16 aspect ratio)
-    const storyWidth = 1080;
-    const storyHeight = 1920;
+    // Story dimensions based on aspect ratio
+    let storyWidth, storyHeight;
+    switch (aspectRatio) {
+      case '2:1':
+        storyWidth = 1920;
+        storyHeight = 960;
+        break;
+      case '1:1':
+        storyWidth = 1080;
+        storyHeight = 1080;
+        break;
+      case '9:16':
+      default:
+        storyWidth = 1080;
+        storyHeight = 1920;
+        break;
+    }
 
     // Create canvas
     const canvas = createCanvas(storyWidth, storyHeight);
