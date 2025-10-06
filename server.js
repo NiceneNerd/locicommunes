@@ -289,7 +289,7 @@ app.post('/generate', upload.single('cover'), async (req, res) => {
     // Draw the corresponding region from the offscreen canvas (blurred at 40)
     textBgCtx.drawImage(offscreen, bgX, bgY, bgWidth, bgHeight, 0, 0, bgWidth, bgHeight);
     // Apply much stronger blur
-    const textBlurRadius = Math.max(15, Math.round(Math.min(80, Math.max(bgWidth, bgHeight) / 3)));
+    const textBlurRadius = Math.max(15, Math.round(Math.min(100, Math.max(bgWidth, bgHeight) / 3)));
     if (textBlurRadius > 0) {
       let textBgImageData = textBgCtx.getImageData(0, 0, bgWidth, bgHeight);
       StackBlur.imageDataRGBA(textBgImageData, 0, 0, bgWidth, bgHeight, textBlurRadius);
