@@ -186,6 +186,62 @@
         font-weight: 500;
       }
 
+      /* Compact custom radios for aspect ratio */
+      .ratio-options {
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .ratio-options label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.4rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.12s, color 0.12s, transform 0.06s;
+      }
+
+      .ratio-options input[type="radio"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.12);
+        background: transparent;
+        display: inline-block;
+        position: relative;
+        margin: 0;
+        flex: 0 0 auto;
+      }
+
+      .ratio-options input[type="radio"]:focus {
+        outline: none;
+        box-shadow: 0 0 0 4px var(--color_theme_bg_pop_20);
+      }
+
+      .ratio-options input[type="radio"]::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--color_theme_bg_pop);
+        transition: transform 0.12s ease;
+        box-shadow: 0 1px 0 rgba(0,0,0,0.25) inset;
+      }
+
+      .ratio-options input[type="radio"]:checked::after {
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      .ratio-options label:hover { background: rgba(255,255,255,0.02); color: #fff; }
+
       button[type="submit"] {
         width: 100%;
         padding: 0.9rem;
@@ -266,6 +322,25 @@
         }
         textarea {
           min-height: 120px;
+        }
+        /* Make ratio options wrap and be touch-friendly on small screens */
+        .ratio-options {
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+
+        .ratio-options label {
+          padding: 0.35rem 0.6rem;
+        }
+
+        .ratio-options input[type="radio"] {
+          width: 16px;
+          height: 16px;
+        }
+
+        .ratio-options input[type="radio"]::after {
+          width: 8px;
+          height: 8px;
         }
       }
 
